@@ -26,6 +26,7 @@ import acquire_work_system_evidence as evidence_acquisition  # noqa: E402
 import reconstruct_work_system as work_reconstruction  # noqa: E402
 import scan_decision_opportunities as opportunity_scan  # noqa: E402
 import integration_package  # noqa: E402
+import jev_fit  # noqa: E402
 import binding_verification  # noqa: E402
 import shadow_controller  # noqa: E402
 import jev_shadow_transport  # noqa: E402
@@ -51,6 +52,8 @@ EVIDENCE_MANIFEST_FILE = "evidence_manifest.yaml"
 SOURCE_CATALOG_FILE = "evidence/source_catalog.yaml"
 RECONSTRUCTION_REQUEST_FILE = "reconstruction_request.md"
 WORK_SYSTEM_PROPOSAL_FILE = "work_system_proposal.yaml"
+JEV_FIT_FILE = "jev_fit.yaml"
+JEV_FIT_REVIEW_FILE = "jev_fit.md"
 
 
 class ProductStateError(RuntimeError):
@@ -221,6 +224,12 @@ def _existing_project_stage(project: str | Path) -> str | None:
     if not (root / PROJECT_FILE).is_file():
         return None
     return str(load_project(root)["stage"])
+
+
+def _write_jev_fit(root: Path, system_id: str, rows: list[dict[str, Any]]) -> None:
+    document = jev_fit.document(system_id, rows)
+    _write_yaml(root / JEV_FIT_FILE, document)
+    (root / JEV_FIT_REVIEW_FILE).write_text(jev_fit.render_markdown(document), encoding="utf-8")
 
 
 def _load_candidates(discovery_dir: Path) -> list[dict[str, Any]]:
@@ -492,6 +501,7 @@ def reconstruct_project(
     root.mkdir(parents=True, exist_ok=True)
     _write_yaml(root / WORK_SYSTEM_MAP_FILE, result)
     (root / WORK_SYSTEM_REVIEW_FILE).write_text(_render_work_system_review(result), encoding="utf-8")
+    _write_jev_fit(root, str(result["system_id"]), jev_fit.assess_reconstruction(result))
     created_at = _now()
     manifest = {
         "schema_version": "1.0",
@@ -514,6 +524,7 @@ def reconstruct_project(
         "artifacts": {
             "work_system_map": WORK_SYSTEM_MAP_FILE,
             "work_system_review": WORK_SYSTEM_REVIEW_FILE,
+            "jev_fit": JEV_FIT_REVIEW_FILE,
             "candidate_bundle": None,
         },
         "evidence_manifest": {
@@ -642,6 +653,7 @@ def finalize_acquired_reconstruction(
     result = work_reconstruction.reconstruct(system, root=root)
     _write_yaml(root / WORK_SYSTEM_MAP_FILE, result)
     (root / WORK_SYSTEM_REVIEW_FILE).write_text(_render_work_system_review(result), encoding="utf-8")
+    _write_jev_fit(root, str(result["system_id"]), jev_fit.assess_reconstruction(result))
     manifest["updated_at"] = _now()
     manifest["stage"] = "work_system_mapped"
     manifest["next_action"] = "review_decision_opportunities"
@@ -655,6 +667,7 @@ def finalize_acquired_reconstruction(
     }
     manifest["artifacts"]["work_system_map"] = WORK_SYSTEM_MAP_FILE
     manifest["artifacts"]["work_system_review"] = WORK_SYSTEM_REVIEW_FILE
+    manifest["artifacts"]["jev_fit"] = JEV_FIT_REVIEW_FILE
     manifest["evidence_manifest"]["sha256"] = work_reconstruction.sha256_file(evidence_path)
     manifest["safety"] = dict(result["safety"]) | {"raw_source_content_persisted": True}
     _write_project(root, manifest, before_stage="evidence_inventoried", via="reconstruct --proposal")
@@ -818,6 +831,7 @@ def scan_project(
             "scan_review": SCAN_REVIEW_FILE,
             "opportunity_map": OPPORTUNITY_MAP_FILE,
             "observation_plan": OBSERVATION_PLAN_FILE,
+            "jev_fit": JEV_FIT_REVIEW_FILE,
             "source_inventory": "evidence/source_inventory.yaml",
             "candidate_bundle": None,
         },
@@ -842,6 +856,7 @@ def scan_project(
     )
     _write_yaml(root / OBSERVATION_PLAN_FILE, _observation_plan(result))
     (root / SCAN_REVIEW_FILE).write_text(_render_scan_review(result), encoding="utf-8")
+    _write_jev_fit(root, str(result["system_id"]), jev_fit.assess_opportunities(result))
     _write_project(root, manifest)
     return manifest
 
@@ -1090,6 +1105,7 @@ def discover_project(
         },
         "artifacts": {
             "review": REVIEW_FILE,
+            "jev_fit": JEV_FIT_REVIEW_FILE,
             "discovery": "discovery",
             "candidate_bundle": "discovery/candidate_bundle" if selected_surface else None,
         },
@@ -1100,6 +1116,16 @@ def discover_project(
         },
     }
     _write_project(root, manifest)
+    _write_jev_fit(
+        root,
+        manifest["system_id"],
+        jev_fit.assess_candidates(
+            candidates,
+            max_actions=max_actions,
+            outcome_field=outcome_field,
+            review_minutes=review_minutes,
+        ),
+    )
     (root / REVIEW_FILE).write_text(
         _render_review(
             system_id=manifest["system_id"],

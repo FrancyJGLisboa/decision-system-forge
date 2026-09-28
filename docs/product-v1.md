@@ -176,6 +176,7 @@ Each run creates a persistent project. Cold start produces:
 forge-project/
 ├── forge_project.yaml
 ├── scan_review.md
+├── jev_fit.md / jev_fit.yaml        four-question JEV fit per decision
 ├── decision_opportunity_map.yaml
 ├── observation_plan.yaml
 ├── instrumentation_spec.yaml      after selection
@@ -192,6 +193,7 @@ It does not create a candidate bundle. Historical discovery produces:
 forge-project/
 ├── forge_project.yaml              product state and next action
 ├── review.md                       domain-owner review surface
+├── jev_fit.md / jev_fit.yaml       four-question JEV fit per surface
 ├── shadow_review.yaml              explicit non-production approval
 └── discovery/
     ├── discovery_manifest.yaml
@@ -216,6 +218,7 @@ forge-project/
 ├── work_system_proposal.yaml
 ├── work_system_map.yaml             after compiler validation
 ├── work_system_review.md            after compiler validation
+├── jev_fit.md / jev_fit.yaml        after compiler validation
 └── evidence/
     ├── source_catalog.yaml
     └── sources/                     bounded exact snapshots

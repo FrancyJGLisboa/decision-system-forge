@@ -126,6 +126,13 @@ python3 scripts/forge.py approve-shadow ./forge-project \
 TYPESAFE_API_KEY=... python3 scripts/forge.py shadow ./forge-project
 ```
 
+Every `scan`, `discover`, and `reconstruct` run also writes `jev_fit.md` and
+`jev_fit.yaml`: one row per discovered decision answering Bounded, Frequent,
+Painful, and Measurable with `yes`, `no`, or `unknown`, the evidence behind each
+answer, and the missing input that would settle an `unknown`. Three `yes`
+answers mark a JEV candidate. Workload and outcome answers stay `unknown` until
+volumes, costs, or outcomes are supplied; the table grants no authority.
+
 `scan` creates `scan_review.md`, `decision_opportunity_map.yaml`, and an
 `observation_plan.yaml`; it creates no bundle or executable binding. `select`
 creates an observation-only instrumentation contract. `observe` validates a

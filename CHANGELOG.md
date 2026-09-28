@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Added the JEV-fit table (`jev_fit.md`, `jev_fit.yaml`) to `scan`,
+  `discover`, and `reconstruct`. Each discovered decision gets Bounded,
+  Frequent, Painful, and Measurable answers (`yes`/`no`/`unknown`) with
+  evidence and the missing input for every `unknown`, plus a verdict.
+  Cold-start rows never claim volume or outcomes.
+
 - Added Product Coherence V1. `product_lifecycle.yaml` is now the executable
   source of truth for persisted stages, next-action vocabulary, legal
   transitions, required inputs, and safety boundaries. Project reads and
